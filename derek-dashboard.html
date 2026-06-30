@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Derek — Command</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d0f11;
+    --surface: #141618;
+    --surface2: #1c1f22;
+    --border: #2a2d31;
+    --accent: #4ade80;
+    --accent2: #f97316;
+    --accent3: #60a5fa;
+    --accent4: #e879f9;
+    --text: #e8eaed;
+    --muted: #6b7280;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 20px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .header-left h1 {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .header-left .day-label {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .day-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .day-badge.work { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .day-badge.off { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+  .day-badge.high { background: rgba(249,115,22,0.15); color: #f97316; border: 1px solid rgba(249,115,22,0.3); }
+
+  /* NAV TABS */
+  .nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 12px 16px;
+    gap: 8px;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  /* CONTENT */
+  .content {
+    padding: 16px;
+    display: none;
+  }
+  .content.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .card-accent {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* WEEK GRID */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .week-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .week-day .label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .week-day .dot-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .day-cell {
+    width: 100%;
+    padding: 6px 2px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .day-cell.work { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .day-cell.off-low { background: rgba(74,222,128,0.1); color: #4ade80; }
+  .day-cell.off-med { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .day-cell.off-high { background: rgba(249,115,22,0.15); color: #f97316; }
+  .day-cell.bball { background: rgba(232,121,249,0.15); color: #e879f9; }
+
+  .day-cell .cell-day { font-size: 13px; margin-bottom: 1px; }
+  .day-cell .cell-tag { font-size: 8px; opacity: 0.8; }
+
+  /* SCHEDULE ROWS */
+  .schedule-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .schedule-row:last-child { border-bottom: none; }
+
+  .schedule-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 36px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .schedule-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .schedule-info { flex: 1; }
+  .schedule-info .title { font-size: 14px; font-weight: 500; }
+  .schedule-info .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* PILL TAGS */
+  .pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .pill.green { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .pill.blue { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .pill.orange { background: rgba(249,115,22,0.15); color: #f97316; }
+  .pill.purple { background: rgba(232,121,249,0.15); color: #e879f9; }
+  .pill.red { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .pill.yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+  /* MACRO TABLE */
+  .macro-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .macro-cell {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .macro-cell .macro-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .macro-cell .macro-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* FOOD LIST */
+  .food-section { margin-bottom: 14px; }
+  .food-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .food-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .food-item:last-child { border-bottom: none; }
+  .food-item .food-note { font-size: 11px; color: var(--muted); }
+
+  /* WORKOUT CARD */
+  .exercise-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .exercise-item:last-child { border-bottom: none; }
+  .exercise-name { font-size: 14px; font-weight: 500; }
+  .exercise-detail { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .exercise-tempo {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 3px;
+  }
+
+  /* CARB DAY SELECTOR */
+  .carb-days {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .carb-type {
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .carb-type.low { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.05); }
+  .carb-type.med { border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.05); }
+  .carb-type.high { border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.05); }
+
+  .carb-type .ct-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .carb-type.low .ct-label { color: #4ade80; }
+  .carb-type.med .ct-label { color: #60a5fa; }
+  .carb-type.high .ct-label { color: #f97316; }
+
+  .carb-type .ct-days {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .carb-type .ct-grams {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .carb-type.low .ct-grams { color: #4ade80; }
+  .carb-type.med .ct-grams { color: #60a5fa; }
+  .carb-type.high .ct-grams { color: #f97316; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  /* TODAY HIGHLIGHT */
+  .today-ring {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* BLOCK STACK */
+  .block-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .block-item:last-child { border-bottom: none; }
+  .block-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .block-info { flex: 1; }
+  .block-name { font-size: 14px; font-weight: 500; }
+  .block-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .block-status {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 8px;
+  }
+  .block-status.active { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .block-status.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+  /* CNA SCHEDULE ROWS */
+  .cna-content { display: none; }
+  .cna-content.active { display: block; }
+  .variant-content { display: none; }
+  .variant-content.active { display: block; }
+  .cna-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 8px;
+    align-items: start;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cna-row:last-child { border-bottom: none; }
+  .cna-row.highlight { background: rgba(74,222,128,0.04); border-radius: 6px; padding: 7px 4px; margin: 0 -4px; }
+  .cna-row.break { background: rgba(96,165,250,0.06); border-radius: 6px; padding: 7px 4px; margin: 0 -4px; }
+  .cna-row.warn { background: rgba(245,158,11,0.06); border-radius: 6px; padding: 7px 4px; margin: 0 -4px; }
+  .cna-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); padding-top: 2px; }
+  .cna-task { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .cna-note { font-size: 10px; color: var(--muted); text-align: right; padding-top: 3px; max-width: 100px; line-height: 1.3; }
+  .block-status.blocked { background: rgba(239,68,68,0.15); color: #ef4444; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="day-label" id="currentDay">Loading...</div>
+    <h1>Derek — Command Center</h1>
+  </div>
+  <div class="day-badge" id="dayBadge">—</div>
+</div>
+
+<div class="nav">
+  <div class="tab active" onclick="switchTab('week')">Week</div>
+  <div class="tab" onclick="switchTab('workout')">Workout</div>
+  <div class="tab" onclick="switchTab('nutrition')">Nutrition</div>
+  <div class="tab" onclick="switchTab('shift')">Shift</div>
+</div>
+
+<!-- WEEK VIEW -->
+<div class="content active" id="tab-week">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">This Week</span>
+      <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace" id="weekRange"></span>
+    </div>
+    <div class="week-grid">
+      <div class="week-day">
+        <span class="label">Mon</span>
+        <div class="day-cell off-low" id="cell-mon">
+          <div class="cell-day">M</div>
+          <div class="cell-tag">LOW</div>
+        </div>
+        <span class="pill green" style="font-size:9px;padding:2px 4px;">TUT Push</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Tue</span>
+        <div class="day-cell off-med">
+          <div class="cell-day">T</div>
+          <div class="cell-tag">MED</div>
+        </div>
+        <span class="pill blue" style="font-size:9px;padding:2px 4px;">HIIT</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Wed</span>
+        <div class="day-cell off-low">
+          <div class="cell-day">W</div>
+          <div class="cell-tag">LOW</div>
+        </div>
+        <span class="pill green" style="font-size:9px;padding:2px 4px;">TUT Pull</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Thu</span>
+        <div class="day-cell off-high">
+          <div class="cell-day">T</div>
+          <div class="cell-tag">HIGH</div>
+        </div>
+        <span class="pill orange" style="font-size:9px;padding:2px 4px;">🏀 Ball</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Fri</span>
+        <div class="day-cell off-low">
+          <div class="cell-day">F</div>
+          <div class="cell-tag">LOW</div>
+        </div>
+        <span class="pill red" style="font-size:9px;padding:2px 4px;">Shift</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Sat</span>
+        <div class="day-cell off-med">
+          <div class="cell-day">S</div>
+          <div class="cell-tag">MED</div>
+        </div>
+        <span class="pill red" style="font-size:9px;padding:2px 4px;">Shift</span>
+      </div>
+      <div class="week-day">
+        <span class="label">Sun</span>
+        <div class="day-cell off-low">
+          <div class="cell-day">S</div>
+          <div class="cell-tag">LOW</div>
+        </div>
+        <span class="pill red" style="font-size:9px;padding:2px 4px;">Shift</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Today's Focus</span>
+      <div class="card-accent" style="background:var(--accent)"></div>
+    </div>
+    <div id="todayFocus">Loading...</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Weekly Legend</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span class="pill red">🔴 Work Shift</span>
+      <span class="pill green">🟢 Low Carb</span>
+      <span class="pill blue">🔵 Med Carb</span>
+      <span class="pill orange">🟠 High Carb / Thu</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- WORKOUT VIEW -->
+<div class="content" id="tab-workout">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">TUT Protocol</span>
+      <span class="pill green">4-1-2 Tempo</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">ECCENTRIC</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--accent);">4s</div>
+        <div style="font-size:10px;color:var(--muted);">Lower</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">PAUSE</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--accent3);">1s</div>
+        <div style="font-size:10px;color:var(--muted);">Hold</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">CONCENTRIC</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--accent2);">2s</div>
+        <div style="font-size:10px;color:var(--muted);">Push</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);">Target 40–60 sec TUT per set. Drop 30–40% of normal weight.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Monday — Push + Core</span>
+      <span class="pill green">LOW CARB</span>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Chest to Floor Push-up</div>
+      <div class="exercise-detail">3 sets × 8–12 reps — hands shoulder-width, rigid body</div>
+      <div class="exercise-tempo">↓4s — hold — ↑2s — don't lock out at top</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Pike Push-up (Shoulder Press)</div>
+      <div class="exercise-detail">3 sets × 8–10 reps — hips up, inverted V position</div>
+      <div class="exercise-tempo">↓4s toward floor — ↑2s press back up</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Slow Plank Hold</div>
+      <div class="exercise-detail">3 × 30–45 sec — forearms down, squeeze everything</div>
+      <div class="exercise-tempo">Progress: extend time or lift one leg</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Dead Bug</div>
+      <div class="exercise-detail">3 × 8 per side — back flat, opposite arm/leg extend</div>
+      <div class="exercise-tempo">Pure core stability — move slow, breathe</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Wednesday — Pull + Hinge</span>
+      <span class="pill green">LOW CARB</span>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Inverted Table Row</div>
+      <div class="exercise-detail">3 × 8–12 — sit under table, grip edge, heels on floor</div>
+      <div class="exercise-tempo">↑2s pull chest up — ↓3s lower — progress: feet elevated</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Hip Hinge (RDL Simulation)</div>
+      <div class="exercise-detail">3 × 10–12 — hinge at hips, push back, feel hamstring</div>
+      <div class="exercise-tempo">↓3s lower torso — ↑2s drive hips forward to stand</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Bodyweight Squat</div>
+      <div class="exercise-detail">3 × 10–15 — feet shoulder-width, sit back into it</div>
+      <div class="exercise-tempo">↓4s sit — pause at bottom — ↑2s stand — no lock out</div>
+    </div>
+    <div class="exercise-item">
+      <div class="exercise-name">Single-Leg Balance Hold</div>
+      <div class="exercise-detail">3 × 30–45 sec per leg — soft knee, eyes forward</div>
+      <div class="exercise-tempo">Longevity move — trains stabilizers for old age</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Tuesday — HIIT</span>
+      <span class="pill blue">MED CARB</span>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">0:00</div>
+      <div class="schedule-dot" style="background:var(--muted)"></div>
+      <div class="schedule-info">
+        <div class="title">Warm Up</div>
+        <div class="sub">March in place, arm circles, leg swings</div>
+        <span class="pill blue">3 min</span>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">3:00</div>
+      <div class="schedule-dot" style="background:var(--accent)"></div>
+      <div class="schedule-info">
+        <div class="title">10 Rounds — Work/Rest</div>
+        <div class="sub">20 sec ON at 85–95% max effort</div>
+        <div class="sub">30 sec OFF — walk or full stop</div>
+        <span class="pill green">Jump squats / Mountain climbers / Burpees</span>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">11:00</div>
+      <div class="schedule-dot" style="background:var(--muted)"></div>
+      <div class="schedule-info">
+        <div class="title">Cool Down</div>
+        <div class="sub">Walk, breathe, stretch</div>
+        <span class="pill blue">2 min</span>
+      </div>
+    </div>
+    <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:10px;">
+      <div style="font-size:11px;color:var(--muted);">Total: ~15 min. EPOC effect burns calories for up to 48hrs after.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Thursday — Basketball</span>
+      <span class="pill purple">HIGH CARB</span>
+    </div>
+    <div style="padding:8px 0;font-size:13px;color:var(--muted);">
+      Pre-game: Rice + protein 60–90 min before tip off.<br><br>
+      Post-game: Same combo to reload glycogen.<br><br>
+      This is your high carb day — the carbs earn their place here. Fast-twitch stimulus, lateral coordination, cardiovascular conditioning, and social engagement — all independent longevity markers.
+    </div>
+  </div>
+
+</div>
+
+<!-- NUTRITION VIEW -->
+<div class="content" id="tab-nutrition">
+
+  <div class="carb-days">
+    <div class="carb-type low">
+      <div class="ct-label">Low</div>
+      <div class="ct-days">Mon / Wed / Fri / Sun</div>
+      <div class="ct-grams">50–100g</div>
+    </div>
+    <div class="carb-type med">
+      <div class="ct-label">Medium</div>
+      <div class="ct-days">Tue / Sat</div>
+      <div class="ct-grams">100–150g</div>
+    </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Calorie + Protein Target</span>
+      <span class="pill green">183 lbs</span>
+    </div>
+    <div class="macro-row">
+      <div class="macro-cell">
+        <div class="macro-label">Daily Cal</div>
+        <div class="macro-val" style="color:#4ade80">~1800</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Protein Floor</div>
+        <div class="macro-val" style="color:#60a5fa">130g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Protein Ideal</div>
+        <div class="macro-val" style="color:#f97316">180g</div>
+      </div>
+    </div>
+    <div style="padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      130g (0.7g/lb) is the realistic floor given 12hr shifts + newborn + one real meal a day. 180g is textbook ideal — bonus territory, not a requirement. Don't stress hitting 180 — 130 preserves muscle just fine.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Work Day Actual Intake</span>
+      <span class="pill red">Logged Example</span>
+    </div>
+    <div class="food-item"><span>10–12 eggs</span><span class="pill green">60–72g protein</span></div>
+    <div class="food-item"><span>¼ cup cooking fat</span><span class="pill green">56g fat</span></div>
+    <div class="food-item"><span>Sweet rotation pick</span><span class="pill yellow">20–30g carbs</span></div>
+    <div class="food-item"><span>Post shift meat anchor</span><span class="pill green">25–30g protein</span></div>
+    <div class="divider"></div>
+    <div class="food-item"><span>Estimated Total</span><span class="pill blue">~1500–1700 cal</span></div>
+    <div class="food-item"><span>Estimated Protein</span><span class="pill blue">~110–130g</span></div>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      This hits the realistic 130g protein floor and lands close to the 1800 cal target without needing yogurt as the second component. Sweet rotation keeps carbs controlled — the syrup is where past overages crept in.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Low Carb Day</span>
+      <div class="card-accent" style="background:#4ade80"></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-cell">
+        <div class="macro-label">Protein</div>
+        <div class="macro-val" style="color:#4ade80">40% · 180g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Fat</div>
+        <div class="macro-val" style="color:#f97316">45% · 90g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Carbs</div>
+        <div class="macro-val" style="color:#60a5fa">15% · 68g</div>
+      </div>
+    </div>
+    <div class="food-section">
+      <div class="food-section-title">✅ Proteins</div>
+      <div class="food-item"><span>Eggs — organic pasture raised</span><span class="pill green">Unlimited</span></div>
+      <div class="food-item"><span>Ground beef — grass fed</span><span class="pill green">Protein base</span></div>
+      <div class="food-item"><span>Salmon — wild caught Alaskan</span><span class="pill green">Protein base</span></div>
+      <div class="food-item"><span>Chicken — organic pasture raised</span><span class="pill green">Protein base</span></div>
+      <div class="food-item"><span>Lamb — wife prepared</span><span class="pill green">When available</span></div>
+      <div class="food-item"><span>Steak — grass fed</span><span class="pill green">When available</span></div>
+    </div>
+    <div class="food-section">
+      <div class="food-section-title">✅ Fats + Dairy</div>
+      <div class="food-item"><span>Ghee</span><span class="pill green">Flavor + fat quality</span></div>
+      <div class="food-item"><span>Avocado oil</span><span class="pill green">High heat stable</span></div>
+      <div class="food-item"><span>Coconut oil — organic</span><span class="pill green">Medium heat / baking</span></div>
+      <div class="food-item"><span>Avocado</span><span class="pill green">1 whole</span></div>
+      <div class="food-item"><span>A2 full fat Greek yogurt</span><span class="pill green">1 cup</span></div>
+      <div class="food-item"><span>Sprouted fermented cashews</span><span class="pill green">Small handful</span></div>
+    </div>
+    <div class="food-section">
+      <div class="food-section-title">✅ Vegetables</div>
+      <div class="food-item"><span>Chard / leafy greens</span><span class="pill green">Unlimited</span></div>
+      <div class="food-item"><span>Cucumber / zucchini / celery</span><span class="pill green">Unlimited</span></div>
+      <div class="food-item"><span>Broccoli / cauliflower / green beans</span><span class="pill green">Unlimited</span></div>
+      <div class="food-item"><span>Sauerkraut</span><span class="pill green">Daily — gut health</span></div>
+    </div>
+    <div class="food-section">
+      <div class="food-section-title">⚠️ Moderate</div>
+      <div class="food-item"><span>Blueberries</span><span class="pill yellow">1 cup max</span></div>
+      <div class="food-item"><span>Pears / apples</span><span class="pill yellow">1 piece</span></div>
+      <div class="food-item"><span>Kirkland maple syrup</span><span class="pill yellow">½ serving</span></div>
+      <div class="food-item"><span>Honey</span><span class="pill yellow">Small drizzle</span></div>
+      <div class="food-item"><span>Dates</span><span class="pill yellow">1–2 only</span></div>
+    </div>
+    <div style="padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      Protein first always — bite or two of egg before fruit or starches to prime insulin response.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Medium Carb Day</span>
+      <div class="card-accent" style="background:#60a5fa"></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-cell">
+        <div class="macro-label">Protein</div>
+        <div class="macro-val" style="color:#4ade80">35% · 158g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Fat</div>
+        <div class="macro-val" style="color:#f97316">35% · 70g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Carbs</div>
+        <div class="macro-val" style="color:#60a5fa">30% · 135g</div>
+      </div>
+    </div>
+    <div class="food-section">
+      <div class="food-section-title">➕ Carb Additions</div>
+      <div class="food-item"><span>White rice — rinsed + parboiled</span><span class="pill blue">Side portion</span></div>
+      <div class="food-item"><span>Purple sweet potato / Murasaki</span><span class="pill blue">Medium size</span></div>
+      <div class="food-item"><span>Beans</span><span class="pill blue">½ cup</span></div>
+      <div class="food-item"><span>Lentils</span><span class="pill blue">½ cup</span></div>
+      <div class="food-item"><span>Green peas</span><span class="pill blue">½ cup</span></div>
+      <div class="food-item"><span>Blueberries</span><span class="pill blue">1–1.5 cups</span></div>
+      <div class="food-item"><span>Pears / apples</span><span class="pill blue">1–2 pieces</span></div>
+      <div class="food-item"><span>Tortillas — organic where possible</span><span class="pill yellow">1–2 max</span></div>
+    </div>
+    <div style="padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      Still protein-first. Carbs are the side, not the base. Break fast with protein to blunt insulin.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">High Carb Day — Thursday</span>
+      <div class="card-accent" style="background:#f97316"></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-cell">
+        <div class="macro-label">Protein</div>
+        <div class="macro-val" style="color:#4ade80">25% · 113g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Fat</div>
+        <div class="macro-val" style="color:#f97316">25% · 50g</div>
+      </div>
+      <div class="macro-cell">
+        <div class="macro-label">Carbs</div>
+        <div class="macro-val" style="color:#f97316">50% · 225g</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">−90m</div>
+      <div class="schedule-dot" style="background:var(--accent2)"></div>
+      <div class="schedule-info">
+        <div class="title">Pre-Game Meal</div>
+        <div class="sub">Rice + protein — fuel the glycogen tank</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Game</div>
+      <div class="schedule-dot" style="background:var(--accent4)"></div>
+      <div class="schedule-info">
+        <div class="title">🏀 Basketball</div>
+        <div class="sub">High intensity — glycolytic system running hot</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Post</div>
+      <div class="schedule-dot" style="background:var(--accent)"></div>
+      <div class="schedule-info">
+        <div class="title">Post-Game Reload</div>
+        <div class="sub">Rice + protein again — glycogen restock window</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Carb Reference</span>
+    </div>
+    <div class="food-item"><span>Blueberries (1 cup)</span><span class="pill blue">21g carbs</span></div>
+    <div class="food-item"><span>Green peas (1 cup)</span><span class="pill blue">21g + 8g protein</span></div>
+    <div class="food-item"><span>Green beans (1 cup)</span><span class="pill green">10g — any day</span></div>
+    <div class="food-item"><span>Corn — organic only</span><span class="pill orange">High day only</span></div>
+    <div class="food-item"><span>Maple syrup ½ serving</span><span class="pill yellow">6–7g carbs</span></div>
+    <div class="food-item"><span>Honey — small drizzle</span><span class="pill yellow">~6g carbs</span></div>
+    <div class="food-item"><span>Dates (1–2)</span><span class="pill yellow">~18g carbs</span></div>
+    <div class="food-item"><span>A2 Greek yogurt (1 cup)</span><span class="pill green">~7g carbs</span></div>
+    <div class="food-item"><span>Yogurt + blueberries + syrup</span><span class="pill yellow">~35g total</span></div>
+    <div class="food-item"><span>Pear / apple (1 medium)</span><span class="pill blue">~25g carbs</span></div>
+    <div class="food-item"><span>Purple sweet potato (medium)</span><span class="pill blue">~26g carbs</span></div>
+    <div class="food-item"><span>Beans (½ cup)</span><span class="pill blue">~20g + protein</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Hydration Protocol</span>
+    </div>
+    <div class="food-item"><span>Distilled water</span><span class="pill green">Base — removes contaminants</span></div>
+    <div class="food-item"><span>Redmond Real Salt</span><span class="pill green">Restores mineral profile</span></div>
+    <div class="food-item"><span>Lemon juice</span><span class="pill green">Flavor + alkalizing</span></div>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      Intentionally reconstructed water. Distill → remineralize → flavor. Not just filtered — rebuilt.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Sourcing Standards</span>
+    </div>
+    <div class="food-item"><span>Eggs</span><span class="pill green">Organic pasture raised</span></div>
+    <div class="food-item"><span>Beef</span><span class="pill green">Grass fed + finished</span></div>
+    <div class="food-item"><span>Salmon</span><span class="pill green">Wild caught Alaskan</span></div>
+    <div class="food-item"><span>Chicken</span><span class="pill green">Organic pasture raised</span></div>
+    <div class="food-item"><span>Cashews</span><span class="pill green">Sprouted + fermented</span></div>
+    <div class="food-item"><span>Yogurt</span><span class="pill green">A2 organic — Costco</span></div>
+    <div class="food-item"><span>Maple syrup</span><span class="pill green">Kirkland organic</span></div>
+    <div class="food-item"><span>Sweeteners</span><span class="pill green">Honey / maple / dates only</span></div>
+    <div class="food-item"><span>Tortillas</span><span class="pill yellow">Organic where possible</span></div>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      Organic is the floor not the ceiling. Local farmers are the ideal — currently cost-constrained but the direction.
+    </div>
+  </div>
+
+</div>
+
+<!-- SHIFT VIEW -->
+<div class="content" id="tab-shift">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Work Schedule</span>
+      <span class="pill red">Fri / Sat / Sun</span>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">05:00</div>
+      <div class="schedule-dot" style="background:var(--warn)"></div>
+      <div class="schedule-info">
+        <div class="title">Wake + Prep</div>
+        <div class="sub">Distilled water + Redmond salt. Protein first — break fast intentionally.</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">05:45</div>
+      <div class="schedule-dot" style="background:var(--accent2)"></div>
+      <div class="schedule-info">
+        <div class="title">Leave — Stores Closed</div>
+        <div class="sub">Cards at home. License only. Window closed.</div>
+        <span class="pill green">Friction in place</span>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">06:00</div>
+      <div class="schedule-dot" style="background:var(--danger)"></div>
+      <div class="schedule-info">
+        <div class="title">Shift Starts</div>
+        <div class="sub">12 hours. Physical + emotional labor. Recovery is training today.</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">18:00</div>
+      <div class="schedule-dot" style="background:var(--accent3)"></div>
+      <div class="schedule-info">
+        <div class="title">Shift Ends — Drive Home</div>
+        <div class="sub">High risk window. Stores open. Cards still at home.</div>
+        <span class="pill yellow">Stay the course</span>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">19:00</div>
+      <div class="schedule-dot" style="background:var(--accent)"></div>
+      <div class="schedule-info">
+        <div class="title">Home — Decompress</div>
+        <div class="sub">Cold Turkey + NextDNS active. Blocking stack live. Bed is the destination.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Shift Nutrition</span>
+      <span class="pill green">Low Carb</span>
+    </div>
+    <div style="padding:8px 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Work Day Protocol</div>
+    <div class="food-item"><span>Pre-shift — eggs heavy load</span><span class="pill green">10–12 eggs</span></div>
+    <div class="food-item"><span>Cooked in ghee or coconut oil</span><span class="pill green">¼ cup — fat + satiety</span></div>
+    <div class="food-item"><span>Sweet component — rotate daily</span><span class="pill yellow">See rotation below</span></div>
+    <div class="food-item"><span>Hydration</span><span class="pill blue">Distilled + Redmond salt</span></div>
+    <div class="food-item"><span>Post shift — meat anchor</span><span class="pill green">Ground beef / salmon + veg</span></div>
+    <div class="divider"></div>
+    <div style="padding:4px 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Sweet Rotation — Pick One Per Day</div>
+    <div class="food-item"><span>1 cup blueberries + ½ serving syrup</span><span class="pill green">~28g carbs</span></div>
+    <div class="food-item"><span>1 pear + small drizzle syrup</span><span class="pill green">~30g carbs</span></div>
+    <div class="food-item"><span>2 dates + sprouted cashews</span><span class="pill green">~20g carbs</span></div>
+    <div class="food-item"><span>Avocado + Redmond salt</span><span class="pill green">~4g — savory reset</span></div>
+    <div class="divider"></div>
+    <div style="padding:4px 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Craving Management — Shift Environment</div>
+    <div class="food-item"><span>🪥 Brush teeth after egg meal</span><span class="pill blue">Mint signals closure — kills 30–45 min of craving</span></div>
+    <div class="food-item"><span>🍵 GT's Kombucha — ginger lemon</span><span class="pill blue">Sip slowly mid shift — lasts 20–30 min</span></div>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      ⚠️ The craving on shift is exposure not hunger — you hand out food all day sleep deprived. Brushing teeth + kombucha occupies the mouth and outlasts the craving window without adding food. Ginger suppresses appetite signal. Carbonation creates fullness. Probiotic feeds competing gut bacteria.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Off Day Egg Strategy</span>
+      <span class="pill green">Mon – Thu</span>
+    </div>
+    <div style="padding:8px 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Preemptive Satiety Protocol</div>
+    <div class="food-item"><span>Morning — eggs first, heavy</span><span class="pill green">6–10 eggs</span></div>
+    <div class="food-item"><span>Cooked in ghee / avocado oil / coconut oil</span><span class="pill green">Fat extends satiety window</span></div>
+    <div class="food-item"><span>Add avocado alongside</span><span class="pill green">Extends fullness further</span></div>
+    <div class="food-item"><span>Keep sauerkraut nearby</span><span class="pill green">Gut reset + snack substitute</span></div>
+    <div class="food-item"><span>Sprouted cashews as backup</span><span class="pill yellow">Small handful — not the bag</span></div>
+    <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:12px;color:var(--muted);">
+      The strategy: decide what you eat before hunger arrives. Eggs + fat in the morning creates a 4–6 hour window where cravings have no foothold. Sleep deprivation shrinks willpower — preemptive satiety removes the need for it entirely.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Free Days — Structure</span>
+      <span class="pill green">Mon–Thu</span>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Mon</div>
+      <div class="schedule-dot" style="background:var(--accent)"></div>
+      <div class="schedule-info">
+        <div class="title">TUT Push + Core</div>
+        <div class="sub">Low carb — eggs, ghee, greens</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Tue</div>
+      <div class="schedule-dot" style="background:var(--accent3)"></div>
+      <div class="schedule-info">
+        <div class="title">HIIT — 15–20 min</div>
+        <div class="sub">Medium carb — add rice or sweet potato</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Wed</div>
+      <div class="schedule-dot" style="background:var(--accent)"></div>
+      <div class="schedule-info">
+        <div class="title">TUT Pull + Hinge</div>
+        <div class="sub">Low carb — protein and fat anchored</div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="schedule-time">Thu</div>
+      <div class="schedule-dot" style="background:var(--accent4)"></div>
+      <div class="schedule-info">
+        <div class="title">🏀 Basketball</div>
+        <div class="sub">High carb — fuel pre and reload post</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CNA SCHEDULE SYSTEM -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:16px 16px 0;">
+      <div class="card-header" style="margin-bottom:12px;">
+        <span class="card-title">CNA Floor Schedules</span>
+        <span class="pill red">6AM–6PM</span>
+      </div>
+    </div>
+
+    <!-- Assignment sub-tabs -->
+    <div style="display:flex;overflow-x:auto;padding:0 16px 12px;gap:6px;scrollbar-width:none;border-bottom:1px solid var(--border);">
+      <div class="cna-tab active" onclick="switchCNA('nb2', this)" style="flex-shrink:0;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--accent);background:rgba(74,222,128,0.15);color:#4ade80;">NB 2nd</div>
+      <div class="cna-tab" onclick="switchCNA('nb1', this)" style="flex-shrink:0;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);">NB 1st</div>
+      <div class="cna-tab" onclick="switchCNA('prog', this)" style="flex-shrink:0;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);">Prog 1st</div>
+      <div class="cna-tab" onclick="switchCNA('nf', this)" style="flex-shrink:0;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);">N Front</div>
+    </div>
+
+    <!-- NB 2nd Half -->
+    <div class="cna-content active" id="cna-nb2" style="padding:12px 16px 16px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="cna-variant active" onclick="switchVariant('nb2','normal',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--accent);background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;">Normal</div>
+        <div class="cna-variant" onclick="switchVariant('nb2','delay',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:600;">Tray Delay</div>
+        <div class="cna-variant" onclick="switchVariant('nb2','census',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:600;">High Census</div>
+      </div>
+      <!-- NB2 Normal -->
+      <div class="variant-content active" id="nb2-normal">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">3–5 feeders · Trays hit 7:30 · 12 residents</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — assignment + vitals sheet prep</span><span class="cna-note">Add C+T columns</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage supplies</span><span class="cna-note">Drop briefs, wipes, chux per room</span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min uninterrupted</span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:30</span><span class="cna-task">🍽 Serve breakfast</span><span class="cna-note">Active, fully participating</span></div>
+        <div class="cna-row"><span class="cna-time">7:50</span><span class="cna-task">Breakfast feeding assists ×3–5</span><span class="cna-note">60–90 min</span></div>
+        <div class="cna-row"><span class="cna-time">8:50</span><span class="cna-task">Pick up plates + chart breakfast intake</span><span class="cna-note">5 min — immediately after</span></div>
+        <div class="cna-row highlight"><span class="cna-time">9:00</span><span class="cna-task">🔄 Round 1 opens</span><span class="cna-note">Non-mobile + wound + skin risk first</span></div>
+        <div class="cna-row"><span class="cna-time">11:10</span><span class="cna-task">Round 1 target close</span><span class="cna-note">130 min — pre-staged, sub-10 min changes</span></div>
+        <div class="cna-row break"><span class="cna-time">11:10</span><span class="cna-task">☕ First 10 min break</span><span class="cna-note">Last window before lunch</span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assists ×3</span><span class="cna-note">60 min</span></div>
+        <div class="cna-row"><span class="cna-time">12:50</span><span class="cna-task">Pick up plates + chart lunch intake</span><span class="cna-note">5 min — immediately</span></div>
+        <div class="cna-row break"><span class="cna-time">1:05</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note">Best protected window</span></div>
+        <div class="cna-row highlight"><span class="cna-time">1:35</span><span class="cna-task">🔄 Round 2 opens</span><span class="cna-note">High frequency first — lighter round</span></div>
+        <div class="cna-row"><span class="cna-time">3:05</span><span class="cna-task">Round 2 target close</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row break"><span class="cna-time">3:05</span><span class="cna-task">☕ Second 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">3:15</span><span class="cna-task">Buffer zone</span><span class="cna-note">Transfers, call lights, bleed-over</span></div>
+        <div class="cna-row"><span class="cna-time">3:45</span><span class="cna-task">ADL charting pass 1</span><span class="cna-note">15 min while rounds are fresh</span></div>
+        <div class="cna-row warn"><span class="cna-time">4:00</span><span class="cna-task">⚠️ Skin findings — report to nurse</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists ×1–2</span><span class="cna-note">20–40 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner intake</span><span class="cna-note">Must beat 6PM lockout</span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL charting wrap</span><span class="cna-note">15 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log</span><span class="cna-note">Census, skin, circumstances — factual, no accusation</span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+      <!-- NB2 Tray Delay -->
+      <div class="variant-content" id="nb2-delay">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Trays hit 8:00 — 30 min shift on entire morning</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — assignment + vitals sheet prep</span><span class="cna-note">Add C+T columns</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage supplies</span><span class="cna-note">Extra time — stage more thoroughly</span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min</span></div>
+        <div class="cna-row"><span class="cna-time">7:40</span><span class="cna-task">Use gap for early changes</span><span class="cna-note">Start 2–3 highest priority residents early</span></div>
+        <div class="cna-row highlight"><span class="cna-time">8:00</span><span class="cna-task">🍽 Serve breakfast — delayed</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">8:20</span><span class="cna-task">Breakfast feeding assists ×3–5</span><span class="cna-note">60–90 min</span></div>
+        <div class="cna-row"><span class="cna-time">9:20</span><span class="cna-task">Pick up plates + chart breakfast intake</span><span class="cna-note">5 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">9:30</span><span class="cna-task">🔄 Round 1 opens</span><span class="cna-note">30 min behind normal — move fast</span></div>
+        <div class="cna-row break"><span class="cna-time">11:20</span><span class="cna-task">☕ First break — compressed window</span><span class="cna-note">Take it now before lunch hits</span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note">Round 1 may not be fully closed</span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assists ×3</span><span class="cna-note">60 min</span></div>
+        <div class="cna-row"><span class="cna-time">12:50</span><span class="cna-task">Pick up plates + chart lunch intake</span><span class="cna-note">Immediately</span></div>
+        <div class="cna-row break"><span class="cna-time">1:05</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">1:35</span><span class="cna-task">🔄 Round 2 opens — also catches Round 1 overflow</span><span class="cna-note">Document what didn't get done in Round 1</span></div>
+        <div class="cna-row"><span class="cna-time">3:15</span><span class="cna-task">Round 2 close target</span><span class="cna-note">100 min — tighter than normal</span></div>
+        <div class="cna-row break"><span class="cna-time">3:15</span><span class="cna-task">☕ Second 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">3:25</span><span class="cna-task">Buffer + ADL charting pass 1</span><span class="cna-note">Combined — 20 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">3:45</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists</span><span class="cna-note">20–40 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL wrap</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log — note the tray delay</span><span class="cna-note">Log the delay time, factual only</span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+      <!-- NB2 High Census -->
+      <div class="variant-content" id="nb2-census">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">16 residents · Up to 5 feeders · Flag charge nurse at start</div>
+        <div class="cna-row warn"><span class="cna-time">6:00</span><span class="cna-task">⚠️ Flag charge nurse — high census load</span><span class="cna-note">Document in grievance log at 5:55</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage</span><span class="cna-note">4 extra rooms — 60 min window</span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:30</span><span class="cna-task">🍽 Serve breakfast</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:50</span><span class="cna-task">Breakfast feeding assists ×5</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row"><span class="cna-time">9:20</span><span class="cna-task">Pick up plates + chart breakfast</span><span class="cna-note">5 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">9:30</span><span class="cna-task">🔄 Round 1 opens — triage strictly</span><span class="cna-note">Non-mobile first. Mobile continent = lowest priority</span></div>
+        <div class="cna-row break"><span class="cna-time">11:20</span><span class="cna-task">☕ First break — take it now</span><span class="cna-note">Last window before lunch</span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assists ×5</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row"><span class="cna-time">1:20</span><span class="cna-task">Chart lunch intake immediately</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">1:30</span><span class="cna-task">🥗 Lunch break — compressed to 20 min if needed</span><span class="cna-note">Document if break was shortened</span></div>
+        <div class="cna-row highlight"><span class="cna-time">1:50</span><span class="cna-task">🔄 Round 2 — catches overflow from Round 1</span><span class="cna-note">ADL charting pass 1 folded in — 15 min at station</span></div>
+        <div class="cna-row break"><span class="cna-time">3:20</span><span class="cna-task">☕ Second break</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">3:30</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists ×5</span><span class="cna-note">90 min — team assist if available</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note">Priority over everything else at this point</span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL wrap — what you can</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log — document high census</span><span class="cna-note">Census number, feeders, anything undone + reason</span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+    </div>
+
+    <!-- NB 1st Half -->
+    <div class="cna-content" id="cna-nb1" style="padding:12px 16px 16px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="cna-variant active" onclick="switchVariant('nb1','normal',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--accent);background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;">Normal</div>
+        <div class="cna-variant" onclick="switchVariant('nb1','delay',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:600;">Tray Delay</div>
+        <div class="cna-variant" onclick="switchVariant('nb1','both',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:600;">Delay + Lunch Push</div>
+      </div>
+      <!-- NB1 Normal -->
+      <div class="variant-content active" id="nb1-normal">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">2 feeders · Trays 7:30 · More manageable than NB 2nd</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — assignment + vitals sheet prep</span><span class="cna-note">Add C+T columns</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage supplies</span><span class="cna-note">Drop briefs, wipes, chux per room</span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:30</span><span class="cna-task">🍽 Serve breakfast</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:50</span><span class="cna-task">Breakfast feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">8:30</span><span class="cna-task">Pick up plates + chart breakfast intake</span><span class="cna-note">5 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">8:40</span><span class="cna-task">🔄 Round 1 opens</span><span class="cna-note">20 min earlier than NB 2nd — use it</span></div>
+        <div class="cna-row break"><span class="cna-time">11:00</span><span class="cna-task">☕ First 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">12:30</span><span class="cna-task">Pick up plates + chart lunch intake</span><span class="cna-note">5 min</span></div>
+        <div class="cna-row break"><span class="cna-time">12:40</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">1:10</span><span class="cna-task">🔄 Round 2 opens</span><span class="cna-note">Lighter round</span></div>
+        <div class="cna-row"><span class="cna-time">2:40</span><span class="cna-task">Round 2 close target</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row break"><span class="cna-time">2:40</span><span class="cna-task">☕ Second 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">2:50</span><span class="cna-task">Buffer zone + ADL charting pass 1</span><span class="cna-note">15 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">3:30</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL charting wrap</span><span class="cna-note">15 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log</span><span class="cna-note">Factual only</span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+      <!-- NB1 Delay -->
+      <div class="variant-content" id="nb1-delay">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Breakfast delayed — lunch stays on time</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — vitals sheet prep</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min</span></div>
+        <div class="cna-row"><span class="cna-time">7:40</span><span class="cna-task">Early changes — use delay gap</span><span class="cna-note">2–3 highest priority rooms</span></div>
+        <div class="cna-row highlight"><span class="cna-time">8:00</span><span class="cna-task">🍽 Serve breakfast — delayed</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">8:20</span><span class="cna-task">Breakfast feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">9:00</span><span class="cna-task">Chart breakfast intake</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">9:10</span><span class="cna-task">🔄 Round 1 opens</span><span class="cna-note">Partial credit from early changes</span></div>
+        <div class="cna-row break"><span class="cna-time">11:10</span><span class="cna-task">☕ First break — compressed</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch — on time</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">12:30</span><span class="cna-task">Chart lunch intake</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">12:40</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">1:10</span><span class="cna-task">🔄 Round 2 — catches overflow</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">2:50</span><span class="cna-task">Round 2 close + ADL pass 1</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">3:05</span><span class="cna-task">☕ Second break</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">3:15</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists ×2</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL wrap</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log — note delay</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+      <!-- NB1 Both -->
+      <div class="variant-content" id="nb1-both">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Breakfast AND lunch both pushed — tightest scenario</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — vitals sheet prep</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:40</span><span class="cna-task">Early changes — maximize delay gap</span><span class="cna-note">As many rooms as possible</span></div>
+        <div class="cna-row highlight"><span class="cna-time">8:00</span><span class="cna-task">🍽 Serve breakfast — delayed</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">8:20</span><span class="cna-task">Breakfast feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">9:00</span><span class="cna-task">Chart breakfast</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">9:10</span><span class="cna-task">🔄 Round 1 — urgent triage only</span><span class="cna-note">Soiled immediately. Dry = scheduled rotation</span></div>
+        <div class="cna-row highlight"><span class="cna-time">12:00</span><span class="cna-task">🍽 Serve lunch — also delayed</span><span class="cna-note">Round 1 likely still open</span></div>
+        <div class="cna-row"><span class="cna-time">12:20</span><span class="cna-task">Lunch feeding assists ×2</span><span class="cna-note">40 min</span></div>
+        <div class="cna-row"><span class="cna-time">1:00</span><span class="cna-task">Chart lunch intake</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">1:10</span><span class="cna-task">🥗 30 min lunch — take it</span><span class="cna-note">Document if shortened</span></div>
+        <div class="cna-row break"><span class="cna-time">1:40</span><span class="cna-task">☕ Combine both 10 min breaks here if not taken</span><span class="cna-note">Document missed breaks</span></div>
+        <div class="cna-row highlight"><span class="cna-time">2:00</span><span class="cna-task">🔄 Round 2 — Round 1 overflow + new soils</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">3:30</span><span class="cna-task">⚠️ ADL charting pass 1 + skin report</span><span class="cna-note">Combined — tight window</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assists ×2</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL wrap</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log — document both delays</span><span class="cna-note">Times, census, what was deferred and why</span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+    </div>
+
+    <!-- Progressions 1st Half -->
+    <div class="cna-content" id="cna-prog" style="padding:12px 16px 16px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="cna-variant active" onclick="switchVariant('prog','normal',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--accent);background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;">Normal</div>
+      </div>
+      <div class="variant-content active" id="prog-normal">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">1 feeder · Most manageable assignment · Use margin wisely</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — vitals sheet prep</span><span class="cna-note">Add C+T columns</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note">20–30 min</span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:30</span><span class="cna-task">🍽 Serve breakfast</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:50</span><span class="cna-task">Breakfast feeding assist ×1</span><span class="cna-note">20 min</span></div>
+        <div class="cna-row"><span class="cna-time">8:10</span><span class="cna-task">Pick up plates + chart breakfast</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">8:20</span><span class="cna-task">🔄 Round 1 opens — earliest start of all assignments</span><span class="cna-note">Use the margin — don't coast</span></div>
+        <div class="cna-row break"><span class="cna-time">10:50</span><span class="cna-task">☕ First 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:50</span><span class="cna-task">Lunch feeding assist ×1</span><span class="cna-note">20 min</span></div>
+        <div class="cna-row"><span class="cna-time">12:10</span><span class="cna-task">Chart lunch intake</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">12:20</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note">Earliest lunch of all assignments</span></div>
+        <div class="cna-row highlight"><span class="cna-time">12:50</span><span class="cna-task">🔄 Round 2</span><span class="cna-note">Significant time margin here — do ADL charting pass 1 mid-round</span></div>
+        <div class="cna-row"><span class="cna-time">2:20</span><span class="cna-task">Round 2 close</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row break"><span class="cna-time">2:20</span><span class="cna-task">☕ Second 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">2:30</span><span class="cna-task">Buffer zone — largest of any assignment</span><span class="cna-note">Use for anything deferred</span></div>
+        <div class="cna-row warn"><span class="cna-time">3:30</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:50</span><span class="cna-task">Dinner feeding assist ×1</span><span class="cna-note">20 min</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:30</span><span class="cna-task">⚠️ Chart dinner — beat lockout</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">5:40</span><span class="cna-task">Final ADL wrap</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+    </div>
+
+    <!-- North Front 1st Half -->
+    <div class="cna-content" id="cna-nf" style="padding:12px 16px 16px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="cna-variant active" onclick="switchVariant('nf','normal',this)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid var(--accent);background:rgba(74,222,128,0.15);color:#4ade80;font-weight:600;">Normal</div>
+      </div>
+      <div class="variant-content active" id="nf-normal">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">0 feeders · Delays absorbed easily · Most forgiving assignment</div>
+        <div class="cna-row"><span class="cna-time">6:00</span><span class="cna-task">Shift start — vitals sheet prep</span><span class="cna-note">Add C+T columns</span></div>
+        <div class="cna-row"><span class="cna-time">6:10</span><span class="cna-task">Vitals + recon + pre-stage</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">7:10</span><span class="cna-task">Vitals charting</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:30</span><span class="cna-task">🍽 Serve breakfast</span><span class="cna-note">No feeders — distribute trays and go</span></div>
+        <div class="cna-row"><span class="cna-time">7:45</span><span class="cna-task">Pick up plates + chart breakfast</span><span class="cna-note">Fastest meal window of all assignments</span></div>
+        <div class="cna-row highlight"><span class="cna-time">7:55</span><span class="cna-task">🔄 Round 1 opens — earliest of all assignments</span><span class="cna-note">Non-mobile + skin risk first as always</span></div>
+        <div class="cna-row break"><span class="cna-time">10:30</span><span class="cna-task">☕ First 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">11:30</span><span class="cna-task">🍽 Serve lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">11:45</span><span class="cna-task">Pick up plates + chart lunch</span><span class="cna-note"></span></div>
+        <div class="cna-row break"><span class="cna-time">11:55</span><span class="cna-task">🥗 30 min lunch break</span><span class="cna-note">Earliest lunch of all assignments</span></div>
+        <div class="cna-row highlight"><span class="cna-time">12:25</span><span class="cna-task">🔄 Round 2</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">1:55</span><span class="cna-task">Round 2 close</span><span class="cna-note">90 min</span></div>
+        <div class="cna-row break"><span class="cna-time">1:55</span><span class="cna-task">☕ Second 10 min break</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">2:05</span><span class="cna-task">ADL charting pass 1 + buffer zone</span><span class="cna-note">Large margin — use it for ADL catch-up</span></div>
+        <div class="cna-row warn"><span class="cna-time">3:30</span><span class="cna-task">⚠️ Skin findings report</span><span class="cna-note">"Can you document I reported this?"</span></div>
+        <div class="cna-row highlight"><span class="cna-time">4:30</span><span class="cna-task">🍽 Serve dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row"><span class="cna-time">4:45</span><span class="cna-task">Pick up plates + chart dinner</span><span class="cna-note"></span></div>
+        <div class="cna-row warn"><span class="cna-time">4:55</span><span class="cna-task">⚠️ Confirm dinner charted — beat lockout with margin</span><span class="cna-note">35 min to spare vs other assignments</span></div>
+        <div class="cna-row"><span class="cna-time">5:10</span><span class="cna-task">Final ADL charting wrap</span><span class="cna-note">Most time of any assignment for end-of-shift charting</span></div>
+        <div class="cna-row warn"><span class="cna-time">5:55</span><span class="cna-task">📋 Grievance log</span><span class="cna-note"></span></div>
+        <div class="cna-row highlight"><span class="cna-time">6:00</span><span class="cna-task">🚪 Out the door</span><span class="cna-note"></span></div>
+      </div>
+    </div>
+
+    <!-- Key Principles -->
+    <div style="padding:0 16px 16px;">
+      <div style="background:var(--surface2);border-radius:10px;padding:12px;font-size:12px;color:var(--muted);line-height:1.7;">
+        <div style="color:var(--text);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Floor Principles</div>
+        <div>• <strong style="color:var(--text);">Pre-stage during vitals</strong> — drop briefs, wipes, chux each room on the recon pass</div>
+        <div>• <strong style="color:var(--text);">C+T columns</strong> on vitals sheet — track changes and trash per room in real time</div>
+        <div>• <strong style="color:var(--text);">Chart meals immediately</strong> — 5 min after plates picked up, not end of shift</div>
+        <div>• <strong style="color:var(--text);">6PM lockout is real</strong> — dinner charting at 5:30 is non-negotiable</div>
+        <div>• <strong style="color:var(--text);">Triage order</strong> — non-mobile + wound + skin risk first. Mobile continent = lowest priority</div>
+        <div>• <strong style="color:var(--text);">Skin language</strong> — "Can you document I reported this?" — always</div>
+        <div>• <strong style="color:var(--text);">Grievance log at 5:55</strong> — factual, no accusation, every shift</div>
+        <div>• <strong style="color:var(--text);">Split charting</strong> — two 15 min passes, not one end-of-shift wall</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+<script>
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  const dayConfig = {
+    0: { badge: 'WORK SHIFT', badgeClass: 'work', carbColor: '#4ade80', carb: 'Low Carb', training: 'Rest — shift day. Recovery is training.', trainingColor: '#ef4444' },
+    1: { badge: 'DAY OFF', badgeClass: 'off', carbColor: '#4ade80', carb: 'Low Carb', training: 'TUT Push + Core', trainingColor: '#4ade80' },
+    2: { badge: 'DAY OFF', badgeClass: 'off', carbColor: '#60a5fa', carb: 'Medium Carb', training: 'HIIT — 15–20 min', trainingColor: '#60a5fa' },
+    3: { badge: 'DAY OFF', badgeClass: 'off', carbColor: '#4ade80', carb: 'Low Carb', training: 'TUT Pull + Hinge', trainingColor: '#4ade80' },
+    4: { badge: '🏀 BASKETBALL', badgeClass: 'high', carbColor: '#f97316', carb: 'High Carb', training: 'Basketball — fuel up pre and post', trainingColor: '#f97316' },
+    5: { badge: 'WORK SHIFT', badgeClass: 'work', carbColor: '#4ade80', carb: 'Low Carb', training: 'Rest — shift day. Recovery is training.', trainingColor: '#ef4444' },
+    6: { badge: 'WORK SHIFT', badgeClass: 'work', carbColor: '#60a5fa', carb: 'Medium Carb', training: 'Rest — shift day. Recovery is training.', trainingColor: '#ef4444' },
+  };
+
+  function init() {
+    const now = new Date();
+    const dow = now.getDay();
+    const config = dayConfig[dow];
+
+    document.getElementById('currentDay').textContent = days[dow];
+
+    const badge = document.getElementById('dayBadge');
+    badge.textContent = config.badge;
+    badge.className = 'day-badge ' + config.badgeClass;
+
+    // Week range
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((dow + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    document.getElementById('weekRange').textContent =
+      `${monday.getMonth()+1}/${monday.getDate()} – ${sunday.getMonth()+1}/${sunday.getDate()}`;
+
+    // Today focus
+    document.getElementById('todayFocus').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:500;">Training</span>
+          <span class="pill" style="background:rgba(74,222,128,0.15);color:${config.trainingColor};">${config.training}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:500;">Nutrition</span>
+          <span class="pill" style="background:rgba(74,222,128,0.1);color:${config.carbColor};">${config.carb}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:14px;font-weight:500;">Blocking</span>
+          <span class="pill green">Stack Active</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function switchCNA(name, el) {
+    document.querySelectorAll('.cna-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.cna-tab').forEach(t => {
+      t.style.border = '1px solid var(--border)';
+      t.style.background = 'var(--surface2)';
+      t.style.color = 'var(--muted)';
+    });
+    document.getElementById('cna-' + name).classList.add('active');
+    el.style.border = '1px solid var(--accent)';
+    el.style.background = 'rgba(74,222,128,0.15)';
+    el.style.color = '#4ade80';
+  }
+
+  function switchVariant(assignment, variant, el) {
+    const panel = document.getElementById('cna-' + assignment);
+    panel.querySelectorAll('.variant-content').forEach(v => v.classList.remove('active'));
+    panel.querySelectorAll('.cna-variant').forEach(b => {
+      b.style.border = '1px solid var(--border)';
+      b.style.background = 'var(--surface2)';
+      b.style.color = 'var(--muted)';
+    });
+    document.getElementById(assignment + '-' + variant).classList.add('active');
+    el.style.border = '1px solid var(--accent)';
+    el.style.background = 'rgba(74,222,128,0.15)';
+    el.style.color = '#4ade80';
+  }
+
+  init();
+</script>
+</body>
+</html>
